@@ -6,13 +6,20 @@ the harness goes through — real API providers need a key, ``mock:*``
 personas never do, which is what makes the bundled demo dashboard runnable
 with zero configuration.
 """
+
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
+
+# Current Anthropic Messages API version — check https://docs.anthropic.com/en/api/versioning
+ANTHROPIC_API_VERSION = "2023-06-01"
 
 
 @dataclass
@@ -25,8 +32,7 @@ class ProviderResponse:
 
 class Provider(ABC):
     @abstractmethod
-    def generate(self, prompt: str, task_id: str | None = None) -> ProviderResponse:
-        ...
+    def generate(self, prompt: str, task_id: str | None = None) -> ProviderResponse: ...
 
 
 def _approx_tokens(text: str) -> int:
@@ -45,7 +51,7 @@ _MOCK_CORRECT_ANSWERS: dict[str, str] = {
     "reasoning_word_1": "patik",
     "reasoning_sequence_1": "32",
     "coding_loop_1": "for i in range(1, 6):\n    print('Fizz' if i % 3 == 0 else i)",
-    "coding_syntax_1": "Fonksiyon tanımının sonunda iki nokta (:) eksik.",
+    "coding_syntax_1": "The colon (:) is missing at the end of the function definition.",
     "coding_bigo_1": "O(n)",
     "coding_regex_1": r"^[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}$",
     "turkish_grammar_1": "gittim",
@@ -58,12 +64,12 @@ _MOCK_CORRECT_ANSWERS: dict[str, str] = {
 # because a persona that misses a question should genuinely fail it, not
 # accidentally pass on unrelated keyword overlap.
 _MOCK_WRONG_ANSWERS: dict[str, str] = {
-    "reasoning_arithmetic_1": "Yaklaşık 90 civarında, tam emin değilim.",
+    "reasoning_arithmetic_1": "Around 90 or so, I'm not entirely sure.",
     "reasoning_logic_1": "Ali",
-    "reasoning_word_1": "kitap",
+    "reasoning_word_1": "tapik",
     "reasoning_sequence_1": "24",
     "coding_loop_1": "print(list(range(1, 6)))",
-    "coding_syntax_1": "Değişken isimlendirmesinde bir sorun olabilir.",
+    "coding_syntax_1": "There might be a variable naming issue.",
     "coding_bigo_1": "O(log n)",
     "coding_regex_1": "[A-Za-z]+",
     "turkish_grammar_1": "gidiyorum",
@@ -72,7 +78,7 @@ _MOCK_WRONG_ANSWERS: dict[str, str] = {
     "turkish_finance_1": "Bir şirketin hisse başına kârını gösteren bir tablodur.",
 }
 
-_DEFAULT_WRONG = "Bu soruyu şu anda yanıtlayamıyorum."
+_DEFAULT_WRONG = "I cannot answer this question right now."
 
 
 class MockProvider(Provider):
@@ -93,7 +99,7 @@ class MockProvider(Provider):
         self.jitter_ms = jitter_ms
 
     def _rng_for(self, task_id: str) -> random.Random:
-        seed_material = f"{self.name}:{task_id}".encode("utf-8")
+        seed_material = f"{self.name}:{task_id}".encode()
         seed = int.from_bytes(hashlib.sha256(seed_material).digest()[:8], "big")
         return random.Random(seed)
 
@@ -102,8 +108,10 @@ class MockProvider(Provider):
         rng = self._rng_for(task_id)
 
         is_correct = rng.random() < self.skill
-        text = _MOCK_CORRECT_ANSWERS.get(task_id, "42") if is_correct else _MOCK_WRONG_ANSWERS.get(
-            task_id, _DEFAULT_WRONG
+        text = (
+            _MOCK_CORRECT_ANSWERS.get(task_id, "42")
+            if is_correct
+            else _MOCK_WRONG_ANSWERS.get(task_id, _DEFAULT_WRONG)
         )
 
         latency = max(20.0, self.base_latency_ms + rng.uniform(-self.jitter_ms, self.jitter_ms))
@@ -124,18 +132,28 @@ MOCK_PERSONAS: dict[str, MockProvider] = {
 
 # --- real API providers -----------------------------------------------------
 
+
 class OpenAIProvider(Provider):
-    def __init__(self, model: str, api_key: str):
+    """Provider for OpenAI chat-completion models.
+
+    Requires ``OPENAI_API_KEY`` to be set in the environment (or ``.env``).
+    Temperature is fixed at 0 for reproducible benchmark results.
+    """
+
+    def __init__(self, model: str, api_key: str, timeout: float = 60.0, max_tokens: int = 1024):
         self.model = model
         self.api_key = api_key
+        self.timeout = timeout
+        self.max_tokens = max_tokens
 
     def generate(self, prompt: str, task_id: str | None = None) -> ProviderResponse:
         import time
 
         import httpx
 
+        logger.debug("OpenAI request: model=%s task_id=%s", self.model, task_id)
         start = time.perf_counter()
-        with httpx.Client(timeout=60) as client:
+        with httpx.Client(timeout=self.timeout) as client:
             resp = client.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={"Authorization": f"Bearer {self.api_key}"},
@@ -143,6 +161,7 @@ class OpenAIProvider(Provider):
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.0,
+                    "max_tokens": self.max_tokens,
                 },
             )
         latency_ms = (time.perf_counter() - start) * 1000
@@ -159,23 +178,32 @@ class OpenAIProvider(Provider):
 
 
 class AnthropicProvider(Provider):
-    def __init__(self, model: str, api_key: str):
+    """Provider for Anthropic Claude models via the Messages API.
+
+    Requires ``ANTHROPIC_API_KEY`` to be set in the environment (or ``.env``).
+    Temperature is fixed at 0 for reproducible benchmark results.
+    """
+
+    def __init__(self, model: str, api_key: str, timeout: float = 60.0, max_tokens: int = 1024):
         self.model = model
         self.api_key = api_key
+        self.timeout = timeout
+        self.max_tokens = max_tokens
 
     def generate(self, prompt: str, task_id: str | None = None) -> ProviderResponse:
         import time
 
         import httpx
 
+        logger.debug("Anthropic request: model=%s task_id=%s", self.model, task_id)
         start = time.perf_counter()
-        with httpx.Client(timeout=60) as client:
+        with httpx.Client(timeout=self.timeout) as client:
             resp = client.post(
                 "https://api.anthropic.com/v1/messages",
-                headers={"x-api-key": self.api_key, "anthropic-version": "2023-06-01"},
+                headers={"x-api-key": self.api_key, "anthropic-version": ANTHROPIC_API_VERSION},
                 json={
                     "model": self.model,
-                    "max_tokens": 1024,
+                    "max_tokens": self.max_tokens,
                     "messages": [{"role": "user", "content": prompt}],
                 },
             )
@@ -193,27 +221,45 @@ class AnthropicProvider(Provider):
 
 
 def get_provider(model_id: str) -> Provider:
-    """``model_id`` is ``"<provider>:<name>"``, e.g. ``"mock:frontier-sim"``,
-    ``"openai:gpt-4o-mini"``, ``"anthropic:claude-3-5-haiku-latest"``."""
+    """Resolve a ``"<provider>:<name>"`` model id to a :class:`Provider` instance.
+
+    Supported prefixes:
+    - ``mock:<persona>`` — deterministic simulation, no API key required.
+    - ``openai:<model>`` — OpenAI chat completions; requires ``OPENAI_API_KEY``.
+    - ``anthropic:<model>`` — Anthropic Messages API; requires ``ANTHROPIC_API_KEY``.
+
+    Timeout and max-tokens for real providers are read from environment variables
+    ``LLM_BENCH_TIMEOUT`` (seconds, default 60) and ``LLM_BENCH_MAX_TOKENS`` (default 1024).
+
+    Raises:
+        ValueError: If the model id format is invalid or the provider/persona is unknown.
+    """
     if ":" not in model_id:
         raise ValueError(f"model id must be '<provider>:<name>', got {model_id!r}")
     provider_name, name = model_id.split(":", 1)
+
+    logger.debug("Resolving provider for %r", model_id)
 
     if provider_name == "mock":
         if name not in MOCK_PERSONAS:
             raise ValueError(f"Unknown mock persona {name!r}. Options: {list(MOCK_PERSONAS)}")
         return MOCK_PERSONAS[name]
 
+    timeout = float(os.getenv("LLM_BENCH_TIMEOUT", "60"))
+    max_tokens = int(os.getenv("LLM_BENCH_MAX_TOKENS", "1024"))
+
     if provider_name == "openai":
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("openai:* models require OPENAI_API_KEY to be set")
-        return OpenAIProvider(model=name, api_key=api_key)
+        return OpenAIProvider(model=name, api_key=api_key, timeout=timeout, max_tokens=max_tokens)
 
     if provider_name == "anthropic":
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError("anthropic:* models require ANTHROPIC_API_KEY to be set")
-        return AnthropicProvider(model=name, api_key=api_key)
+        return AnthropicProvider(
+            model=name, api_key=api_key, timeout=timeout, max_tokens=max_tokens
+        )
 
     raise ValueError(f"Unknown provider {provider_name!r} (expected mock/openai/anthropic)")

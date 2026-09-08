@@ -9,6 +9,7 @@ all-pairs (bubble) use with up to three series, which is exactly the model
 count the bundled demo ships with — add a fourth model and re-check that
 palette slot before shipping the page.
 """
+
 from __future__ import annotations
 
 import json
@@ -20,12 +21,16 @@ _SERIES_COLORS_LIGHT = ["#2a78d6", "#eb6834", "#1baf7a"]
 _SERIES_COLORS_DARK = ["#3987e5", "#d95926", "#199e70"]
 
 _TEMPLATE = """<!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="LLM Benchmark Panel — accuracy, latency, and cost comparison across models.">
 <title>LLM Benchmark Panel</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<!-- Chart.js loaded from CDN. For offline use, bundle it locally:
+     npm install chart.js && copy node_modules/chart.js/dist/chart.umd.min.js here -->
+<script>if(typeof Chart==='undefined'){document.body.insertAdjacentHTML('afterbegin','<p style="color:red;padding:1rem;font-family:system-ui">Chart.js failed to load from CDN. Charts will not render.</p>');}</script>
 <style>
   :root {
     color-scheme: light;
@@ -78,40 +83,42 @@ _TEMPLATE = """<!doctype html>
 </head>
 <body>
   <h1>LLM Benchmark Panel</h1>
-  <div class="meta">Suites: __SUITES__ &middot; Modeller: __MODELS__ &middot; Oluşturulma: __GENERATED_AT__</div>
+  <div class="meta">Suites: __SUITES__ &middot; Models: __MODELS__ &middot; Generated: __GENERATED_AT__</div>
 
   <div class="grid">
     <div class="card">
-      <h2>Liderlik tablosu</h2>
-      <table>
+      <h2>Leaderboard</h2>
+      <table aria-label="Model leaderboard sorted by accuracy">
         <thead>
-          <tr><th>Model</th><th class="num">Doğruluk</th><th class="num">Ort. gecikme (ms)</th><th class="num">Toplam maliyet ($)</th></tr>
+          <tr><th>Model</th><th class="num">Accuracy</th><th class="num">Avg. Latency (ms)</th><th class="num">Total Cost ($)</th></tr>
         </thead>
         <tbody id="leaderboard-body"></tbody>
       </table>
     </div>
 
     <div class="card">
-      <h2>Doğruluk (%)</h2>
-      <canvas id="accuracyChart" height="220"></canvas>
+      <h2>Accuracy (%)</h2>
+      <canvas id="accuracyChart" height="220" role="img" aria-label="Bar chart showing accuracy percentage per model"></canvas>
     </div>
 
     <div class="card">
-      <h2>Gecikme vs. Doğruluk (balon boyutu = maliyet)</h2>
-      <canvas id="tradeoffChart" height="220"></canvas>
+      <h2>Latency vs. Accuracy (bubble size = cost)</h2>
+      <canvas id="tradeoffChart" height="220" role="img" aria-label="Bubble chart showing latency versus accuracy with cost as bubble size"></canvas>
     </div>
 
     <div class="card">
-      <h2>Kategoriye göre doğruluk</h2>
-      <canvas id="categoryChart" height="220"></canvas>
+      <h2>Accuracy by Category</h2>
+      <canvas id="categoryChart" height="220" role="img" aria-label="Bar chart showing accuracy per category broken down by model"></canvas>
     </div>
   </div>
 
-  <footer>Üretilen dashboard — veriler data/results/*.json dosyasından okunur. mock: modelleri, API anahtarı gerektirmeyen deterministik simülasyonlardır (bkz. README).</footer>
+  <footer>Generated dashboard — data sourced from data/results/*.json. mock:* models are deterministic simulations requiring no API key (see README).</footer>
 
 <script>
+if (typeof Chart !== 'undefined') {
 const DATA = __DATA_JSON__;
 const COLORS = __COLORS_JSON__;
+const BUBBLE_COST_SCALE = 4000;  // pixels per USD; adjust if cost range changes
 const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
   && document.documentElement.getAttribute('data-theme') !== 'light';
 const palette = isDark ? COLORS.dark : COLORS.light;
@@ -157,7 +164,7 @@ new Chart(document.getElementById('tradeoffChart'), {
   data: {
     datasets: DATA.summaries.map((s, i) => ({
       label: s.model_id,
-      data: [{ x: s.avg_latency_ms, y: +(s.accuracy * 100).toFixed(1), r: Math.max(6, s.total_cost_usd * 4000) }],
+      data: [{ x: s.avg_latency_ms, y: +(s.accuracy * 100).toFixed(1), r: Math.max(6, s.total_cost_usd * BUBBLE_COST_SCALE) }],
       backgroundColor: palette[i % palette.length] + 'cc',
       borderColor: palette[i % palette.length],
       borderWidth: 1,
@@ -166,8 +173,8 @@ new Chart(document.getElementById('tradeoffChart'), {
   options: {
     plugins: { legend: { position: 'bottom' } },
     scales: {
-      x: { title: { display: true, text: 'Ortalama gecikme (ms)' }, grid: { color: gridColor } },
-      y: { title: { display: true, text: 'Doğruluk (%)' }, min: 0, max: 100, grid: { color: gridColor } }
+      x: { title: { display: true, text: 'Average Latency (ms)' }, grid: { color: gridColor } },
+      y: { title: { display: true, text: 'Accuracy (%)' }, min: 0, max: 100, grid: { color: gridColor } }
     }
   }
 });
@@ -198,6 +205,7 @@ new Chart(document.getElementById('categoryChart'), {
     }
   }
 });
+} // end Chart guard
 </script>
 </body>
 </html>

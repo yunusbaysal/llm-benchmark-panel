@@ -39,9 +39,7 @@ def test_mock_provider_is_deterministic_across_calls():
 
 def test_mock_provider_varies_by_task_id():
     provider = MOCK_PERSONAS["frontier-sim"]
-    responses = {
-        provider.generate("p", task_id=f"task_{i}").text for i in range(20)
-    }
+    responses = {provider.generate("p", task_id=f"task_{i}").text for i in range(20)}
     # With 20 different task ids and no answer-book entries, all fall back to
     # the same default-wrong text when unlucky and "42" when lucky, so this
     # just checks we get a small, bounded set back rather than a crash.
@@ -50,9 +48,18 @@ def test_mock_provider_varies_by_task_id():
 
 def test_frontier_sim_more_accurate_than_budget_sim_on_known_tasks():
     known_task_ids = [
-        "reasoning_arithmetic_1", "reasoning_logic_1", "reasoning_word_1", "reasoning_sequence_1",
-        "coding_loop_1", "coding_syntax_1", "coding_bigo_1", "coding_regex_1",
-        "turkish_grammar_1", "turkish_vocab_1", "turkish_idiom_1", "turkish_finance_1",
+        "reasoning_arithmetic_1",
+        "reasoning_logic_1",
+        "reasoning_word_1",
+        "reasoning_sequence_1",
+        "coding_loop_1",
+        "coding_syntax_1",
+        "coding_bigo_1",
+        "coding_regex_1",
+        "turkish_grammar_1",
+        "turkish_vocab_1",
+        "turkish_idiom_1",
+        "turkish_finance_1",
     ]
     from llm_bench.providers import _MOCK_CORRECT_ANSWERS
 

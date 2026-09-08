@@ -22,13 +22,24 @@ jobs:
           cache: pip
 
       - name: Install package + dev dependencies
-        run: pip install -e ".[dev]"
+        run: pip install --no-cache-dir -e ".[dev]"
 
-      - name: Lint (ruff)
+      - name: Lint (ruff check)
         run: ruff check src tests
 
+      - name: Format check (ruff format)
+        run: ruff format --check src tests
+
       - name: Test with coverage
-        run: pytest --cov=llm_bench --cov-report=term-missing
+        run: pytest --cov=llm_bench --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+
+      - name: Upload coverage report
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 30
 
       - name: Regenerate demo dashboard (fails if the harness is broken)
         run: python scripts/regenerate_demo.py

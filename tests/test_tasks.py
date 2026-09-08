@@ -32,3 +32,21 @@ def test_load_suite_from_temp_file_validates_duplicates(tmp_path: Path):
     )
     with pytest.raises(ValueError):
         load_suite(path)
+
+
+def test_load_suite_invalid_json_raises(tmp_path: Path):
+    path = tmp_path / "bad.json"
+    path.write_text("{ not valid json }", encoding="utf-8")
+    with pytest.raises(ValueError, match="Invalid JSON"):
+        load_suite(path)
+
+
+def test_load_suite_missing_required_key_raises(tmp_path: Path):
+    path = tmp_path / "missing_key.json"
+    # "scorer" key is missing
+    path.write_text(
+        '[{"id":"x","category":"c","prompt":"p"}]',
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="missing required key"):
+        load_suite(path)

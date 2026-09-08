@@ -6,6 +6,7 @@ decision, replace ``PRICING_USD_PER_1K`` with current numbers from each
 provider's pricing page. Anything not in the table falls back to
 ``DEFAULT_PRICING``.
 """
+
 from __future__ import annotations
 
 PRICING_USD_PER_1K: dict[str, tuple[float, float]] = {
