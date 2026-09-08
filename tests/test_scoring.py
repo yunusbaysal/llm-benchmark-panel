@@ -1,3 +1,5 @@
+import pytest
+
 from llm_bench.scoring import score, score_exact_match, score_keywords, score_regex
 
 
@@ -52,3 +54,24 @@ def test_score_llm_judge_uses_judge_fn():
         judge_fn=lambda prompt: "YES, satisfies rubric",
     )
     assert result.correct
+
+
+def test_exact_match_missing_expected_key_raises():
+    with pytest.raises(KeyError, match="expected"):
+        score_exact_match("anything", {"type": "exact_match"})
+
+
+def test_keywords_missing_keywords_key_raises():
+    with pytest.raises(KeyError, match="keywords"):
+        score_keywords("anything", {"mode": "all"})
+
+
+def test_regex_invalid_pattern_returns_incorrect_not_crash():
+    result = score_regex("any text", {"pattern": "[invalid("})
+    assert not result.correct
+    assert "invalid regex" in result.detail
+
+
+def test_score_unknown_type_raises():
+    with pytest.raises(ValueError, match="Unknown scorer type"):
+        score("anything", {"type": "nonexistent_scorer"})

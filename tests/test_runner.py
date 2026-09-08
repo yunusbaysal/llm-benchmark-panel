@@ -26,3 +26,29 @@ def test_summarize_groups_by_model_and_sorts_by_accuracy():
     assert summaries[0].accuracy >= summaries[1].accuracy
     for s in summaries:
         assert s.num_tasks == len(tasks)
+
+
+def test_run_benchmark_tolerates_per_task_exception(monkeypatch):
+    """A provider that raises on the first task should not abort the entire run."""
+    from llm_bench.providers import MOCK_PERSONAS
+
+    call_count = 0
+    original_generate = MOCK_PERSONAS["mid-sim"].generate
+
+    def flaky_generate(prompt, task_id=None):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise RuntimeError("simulated transient failure")
+        return original_generate(prompt, task_id=task_id)
+
+    monkeypatch.setattr(MOCK_PERSONAS["mid-sim"], "generate", flaky_generate)
+    tasks = load_suites(["reasoning"])
+    results = run_benchmark(["mock:mid-sim"], tasks)
+
+    # All tasks still produce a result — the failed one has correct=False
+    assert len(results) == len(tasks)
+    failed = [r for r in results if r.score_detail.startswith("error:")]
+    assert len(failed) == 1
+    assert not failed[0].correct
+    assert failed[0].latency_ms == 0.0

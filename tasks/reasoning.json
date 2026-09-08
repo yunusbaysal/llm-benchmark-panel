@@ -2,25 +2,25 @@
   {
     "id": "reasoning_arithmetic_1",
     "category": "reasoning",
-    "prompt": "17 çarpı 6 kaçtır? Sadece sayıyı yaz.",
+    "prompt": "What is 17 multiplied by 6? Write only the number.",
     "scorer": { "type": "exact_match", "expected": "102" }
   },
   {
     "id": "reasoning_logic_1",
     "category": "reasoning",
-    "prompt": "Ali, Ahmet'ten uzun; Ahmet, Mehmet'ten uzun. Üçü arasında en kısa kim? Sadece ismi yaz.",
+    "prompt": "Ali is taller than Ahmet; Ahmet is taller than Mehmet. Who is the shortest of the three? Write only the name.",
     "scorer": { "type": "exact_match", "expected": "Mehmet" }
   },
   {
     "id": "reasoning_word_1",
     "category": "reasoning",
-    "prompt": "'kitap' kelimesinin harfleri tersten yazılırsa ne olur? Sadece cevabı yaz.",
+    "prompt": "What do you get when you reverse the letters of the word 'kitap'? Write only the answer.",
     "scorer": { "type": "exact_match", "expected": "patik" }
   },
   {
     "id": "reasoning_sequence_1",
     "category": "reasoning",
-    "prompt": "2, 4, 8, 16, ? dizisinde soru işaretinin yerine gelmesi gereken sayı nedir? Sadece sayıyı yaz.",
+    "prompt": "In the sequence 2, 4, 8, 16, ?, what number replaces the question mark? Write only the number.",
     "scorer": { "type": "exact_match", "expected": "32" }
   }
 ]

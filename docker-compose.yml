@@ -1,9 +1,15 @@
 services:
   llm-bench:
     build: .
+    restart: "no"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     volumes:
       - ./data:/app/data
       - ./web:/app/web
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 512M

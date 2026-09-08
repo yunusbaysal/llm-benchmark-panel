@@ -2,25 +2,25 @@
   {
     "id": "coding_loop_1",
     "category": "coding",
-    "prompt": "Python'da 1'den 5'e kadar olan sayıları yazdıran, ama 3'e tam bölünenler yerine 'Fizz' yazdıran kısa bir kod örneği ver.",
+    "prompt": "Write a short Python snippet that prints the numbers 1 to 5, but prints 'Fizz' instead of any number divisible by 3.",
     "scorer": { "type": "keywords", "mode": "all", "keywords": ["for", "range", "fizz"] }
   },
   {
     "id": "coding_syntax_1",
     "category": "coding",
-    "prompt": "Şu Python satırındaki sözdizimi hatasını bul: `def add(a, b) return a + b`. Hangi karakter eksik, kısaca söyle.",
-    "scorer": { "type": "keywords", "mode": "any", "keywords": [":", "iki nokta", "colon"] }
+    "prompt": "Find the syntax error in this Python line: `def add(a, b) return a + b`. Name the missing character briefly.",
+    "scorer": { "type": "keywords", "mode": "any", "keywords": [":", "colon"] }
   },
   {
     "id": "coding_bigo_1",
     "category": "coding",
-    "prompt": "Sıralanmamış bir listede doğrusal arama (linear search) yapmanın zaman karmaşıklığı, büyük O gösterimiyle nedir? Sadece ifadeyi yaz.",
+    "prompt": "What is the time complexity of linear search on an unsorted list in Big-O notation? Write only the expression.",
     "scorer": { "type": "exact_match", "expected": "O(n)" }
   },
   {
     "id": "coding_regex_1",
     "category": "coding",
-    "prompt": "Bir e-posta adresini yakalamak için basit bir regex örneği ver.",
+    "prompt": "Give a simple regex example that matches an email address.",
     "scorer": { "type": "regex", "pattern": "@" }
   }
 ]
