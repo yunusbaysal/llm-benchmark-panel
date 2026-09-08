@@ -1,0 +1,26 @@
+[
+  {
+    "id": "coding_loop_1",
+    "category": "coding",
+    "prompt": "Python'da 1'den 5'e kadar olan sayıları yazdıran, ama 3'e tam bölünenler yerine 'Fizz' yazdıran kısa bir kod örneği ver.",
+    "scorer": { "type": "keywords", "mode": "all", "keywords": ["for", "range", "fizz"] }
+  },
+  {
+    "id": "coding_syntax_1",
+    "category": "coding",
+    "prompt": "Şu Python satırındaki sözdizimi hatasını bul: `def add(a, b) return a + b`. Hangi karakter eksik, kısaca söyle.",
+    "scorer": { "type": "keywords", "mode": "any", "keywords": [":", "iki nokta", "colon"] }
+  },
+  {
+    "id": "coding_bigo_1",
+    "category": "coding",
+    "prompt": "Sıralanmamış bir listede doğrusal arama (linear search) yapmanın zaman karmaşıklığı, büyük O gösterimiyle nedir? Sadece ifadeyi yaz.",
+    "scorer": { "type": "exact_match", "expected": "O(n)" }
+  },
+  {
+    "id": "coding_regex_1",
+    "category": "coding",
+    "prompt": "Bir e-posta adresini yakalamak için basit bir regex örneği ver.",
+    "scorer": { "type": "regex", "pattern": "@" }
+  }
+]

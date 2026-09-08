@@ -1,0 +1,26 @@
+[
+  {
+    "id": "reasoning_arithmetic_1",
+    "category": "reasoning",
+    "prompt": "17 çarpı 6 kaçtır? Sadece sayıyı yaz.",
+    "scorer": { "type": "exact_match", "expected": "102" }
+  },
+  {
+    "id": "reasoning_logic_1",
+    "category": "reasoning",
+    "prompt": "Ali, Ahmet'ten uzun; Ahmet, Mehmet'ten uzun. Üçü arasında en kısa kim? Sadece ismi yaz.",
+    "scorer": { "type": "exact_match", "expected": "Mehmet" }
+  },
+  {
+    "id": "reasoning_word_1",
+    "category": "reasoning",
+    "prompt": "'kitap' kelimesinin harfleri tersten yazılırsa ne olur? Sadece cevabı yaz.",
+    "scorer": { "type": "exact_match", "expected": "patik" }
+  },
+  {
+    "id": "reasoning_sequence_1",
+    "category": "reasoning",
+    "prompt": "2, 4, 8, 16, ? dizisinde soru işaretinin yerine gelmesi gereken sayı nedir? Sadece sayıyı yaz.",
+    "scorer": { "type": "exact_match", "expected": "32" }
+  }
+]

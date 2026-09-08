@@ -1,0 +1,26 @@
+[
+  {
+    "id": "turkish_grammar_1",
+    "category": "turkish",
+    "prompt": "'Gitmek' fiilinin geçmiş zaman, birinci tekil şahıs ('ben') çekimini yaz. Sadece kelimeyi yaz.",
+    "scorer": { "type": "exact_match", "expected": "gittim" }
+  },
+  {
+    "id": "turkish_vocab_1",
+    "category": "turkish",
+    "prompt": "'Enflasyon' kelimesinin İngilizce karşılığı nedir? Sadece kelimeyi yaz.",
+    "scorer": { "type": "exact_match", "expected": "inflation" }
+  },
+  {
+    "id": "turkish_idiom_1",
+    "category": "turkish",
+    "prompt": "'Dereyi görmeden paçaları sıvamak' deyiminin anlamını tek cümleyle açıkla.",
+    "scorer": { "type": "keywords", "mode": "any", "keywords": ["gerçekleşmeden", "olmadan", "erken"] }
+  },
+  {
+    "id": "turkish_finance_1",
+    "category": "turkish",
+    "prompt": "BIST100 endeksi neyi temsil eder? Tek cümleyle açıkla.",
+    "scorer": { "type": "keywords", "mode": "any", "keywords": ["borsa", "endeks"] }
+  }
+]
